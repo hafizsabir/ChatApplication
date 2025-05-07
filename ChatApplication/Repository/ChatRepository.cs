@@ -18,8 +18,45 @@ namespace ChatApplication.Repository
         {
             _context = context;
         }
+
+        public async Task<InterlinkResponse<List<ChatMessage>>> GetReceivedMessagesAsync(ReceivedMessageDto Request)
+        {
+            try
+            {
+                var Response = await _context.ChatMessages
+                    .Where(m => m.ReceiverId == Request.RecieverId)
+                    .OrderByDescending(m => m.Timestamp)
+                    .ToListAsync();
+
+                if (Response == null || Response.Count == 0)
+                {
+                    return InterlinkResponse<List<ChatMessage>>.FailResponse(
+                        message: "No messages found for this receiver.",
+                        statusCode: ErrorCodes.NotFound
+                    );
+                }
+
+                return InterlinkResponse<List<ChatMessage>>.SuccessResponse(
+                    Response,
+                    ResponseMessages.MessagesRetrievedSuccessFully.GetDescription(),
+                    ErrorCodes.OK
+                );
+            }
+            catch (Exception ex)
+            {
+                return InterlinkResponse<List<ChatMessage>>.FailResponse(
+                    message: $"An error occurred while retrieving messages: {ex.Message}",
+                    statusCode: ErrorCodes.InternalServerError
+                );
+            }
+        }
+
+
+
+
+
         // Update the return type to be generic List<T> instead of List<ChatMessage>
-        public async Task<InterlinkResponse<List<T>>> GetMessagesAsync(GetAllUserChatRequest request)
+        public async Task<InterlinkResponse<List<T>>> GetAllMessages(GetAllUserChatRequest request)
         {
             try
             {

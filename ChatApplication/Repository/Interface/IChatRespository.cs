@@ -13,6 +13,8 @@ namespace ChatApplication.Repository.Interface
         /// <returns>An InterlinkResponse containing the result of the operation.</returns> 
     
         Task<InterlinkResponse<T>> SendMessageAsync(T message);
-        Task<InterlinkResponse<List<T>>> GetMessagesAsync(GetAllUserChatRequest request);
+        Task<InterlinkResponse<List<T>>> GetAllMessages(GetAllUserChatRequest request);
+        Task<InterlinkResponse<List<ChatMessage>>> GetReceivedMessagesAsync(ReceivedMessageDto request);
+
     }
 }

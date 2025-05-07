@@ -20,11 +20,20 @@ namespace ChatApplication.Controllers
             _chatService = chatService;
         }
 
+        [HttpGet("Get-User-Message-recieved")]
+        public async Task<IActionResult> GetReceivedMessagesAsync([FromBody] ReceivedMessageDto GetUsersRequest)
+        {
+            // request.SenderId and request.ReceiverId will be available here
+            var response = await _chatService.GetReceivedMessagesAsync(GetUsersRequest);
+            return StatusCode((int)ErrorCodes.OK
+                , new InterlinkResponse<List<ChatMessage>>(response.Success, response.Data, response.Message, response.StatusCode));
+        }
+
         [HttpPost("GetAllMessages")]
         public async Task<IActionResult> GetAllMessages([FromBody] GetAllUserChatRequest GetUsersRequest)
         {
             // request.SenderId and request.ReceiverId will be available here
-            var messages = await _chatService.GetUserMessage(GetUsersRequest);
+            var messages = await _chatService.GetAllMessages(GetUsersRequest);
             return StatusCode((int)ErrorCodes.OK
                 , new InterlinkResponse<List<ChatMessage>>(messages.Success, messages.Data, messages.Message,messages.StatusCode));
         }

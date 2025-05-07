@@ -25,16 +25,13 @@ export function fetchContacts(tokenKey) {
                     const isOnline = user.isOnline;
 
                     // Render the contact with proper attributes
-                    response.data.forEach(user => {
-                        const isOnline = user.isOnline;
-
-                        const contact = `
+                    const contact = `
 <div class="contact"
     data-user-id="${user.id}" 
     data-full-name="${user.fullName}" 
     data-is-online="${isOnline}" 
     onclick="startChat(this)"
-    style="display: flex; align-items: center; padding: 10px; margin-bottom: 10px; border-radius: 4px; cursor: pointer; background: ${isOnline ? '#4CAF50' : '#ffffff'}; position: relative; border: 2px solid transparent;">
+    style="display: flex; align-items: center; padding: 10px; margin-bottom: 10px; border-radius: 4px; cursor: pointer; background: ${isOnline ? '#4CAF50' : '#f1f1f1'}; position: relative; border: 2px solid transparent;">
     <img src="${user.profilePicture ? `data:image/png;base64,${user.profilePicture}` : '/Images/default.png'}"
         alt="${user.profilePicture}"
         style="width: 45px; height: 45px; border-radius: 50%; margin-right: 10px; object-fit: cover;">
@@ -44,8 +41,8 @@ export function fetchContacts(tokenKey) {
     </div>
     <span style="position: absolute; right: 10px; top: 50%; transform: translateY(-50%); width: 10px; height: 10px; border-radius: 50%; background: ${isOnline ? '#4CAF50' : '#ccc'};"></span>
 </div>`;
-                        contactList.append(contact);
-                    });
+                    contactList.append(contact);
+                });
             }
         },
         error: function () {

@@ -17,7 +17,33 @@ namespace ChatApplication.Services
             _chatRepository = chatRepository;
             _DecryptTokenService = decryptToken;
         }
-        public async Task<InterlinkResponse<List<ChatMessage>>> GetUserMessage(GetAllUserChatRequest request)
+         public async Task<InterlinkResponse<List<ChatMessage>>> GetReceivedMessagesAsync(ReceivedMessageDto request)
+        {
+            if (string.IsNullOrEmpty(request.SenderId) )//|| string.IsNullOrEmpty(request.ReceiverId))
+            {
+                return InterlinkResponse<List<ChatMessage>>.FailResponse(
+                    data: null,
+                    ResponseMessages.IdsAreMissing.GetDescription(),
+                     ErrorCodes.Forbidden
+                );
+            }
+
+            var response = await _chatRepository.GetReceivedMessagesAsync(request);
+            if (response.Success)
+            {
+                return InterlinkResponse<List<ChatMessage>>.SuccessResponse(
+                      data: response.Data,
+                      message: ResponseMessages.MessageSentSuccessFully.GetDescription(),
+                      statusCode: ErrorCodes.OK
+                  );
+            }
+            return InterlinkResponse<List<ChatMessage>>.FailResponse(
+                data: null,
+                message: ResponseMessages.MessagesFailedToRetrieved.GetDescription(),
+                statusCode: ErrorCodes.NotFound
+            );
+        }
+        public async Task<InterlinkResponse<List<ChatMessage>>> GetAllMessages(GetAllUserChatRequest request)
         {
             if (string.IsNullOrEmpty(request.SenderId) || string.IsNullOrEmpty(request.ReceiverId))
             {
@@ -28,7 +54,7 @@ namespace ChatApplication.Services
                 );
             }
 
-            var messages = await _chatRepository.GetMessagesAsync(request);
+            var messages = await _chatRepository.GetAllMessages(request);
             if (messages.Success)
             {
                 return InterlinkResponse<List<ChatMessage>>.SuccessResponse(
