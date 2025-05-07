@@ -1,0 +1,14 @@
+﻿using ChatApplication.Models;
+
+namespace ChatApplication.Services.Interface
+{
+    public interface ITokenService
+    {
+        string GenerateToken(ApplicationUser user);
+        string GenerateUpdatedInfoToken(ApplicationUser user,double timeRemaining);
+
+
+        string TrustedDeviceToken(ApplicationUser user);
+        //string GetPrincipalFromEncryptedToken(string token);
+    }
+}

@@ -1,0 +1,198 @@
+﻿@page
+@model ChatApplication.Pages.ChatPages.RegisterModel
+@{
+    // ViewData["Title"] = "Register";
+}
+<div class="register-container">
+    <h2>Register</h2>
+    <form id="registerForm">
+        <input name="Fullname" type="text" id="FullName" placeholder="Full Name" required />
+        <input name="UserName" type="text" id="UserName" placeholder="User Name" required />
+        <input name="email" type="email" id="Email" placeholder="Email" required />
+        <input name="password" type="password" id="Password" placeholder="Password" required />
+        <input name="confirmPassword" type="password" id="ConfirmPassword" placeholder="Confirm Password" required />
+        <input name="profilePicture" type="file" id="ProfilePicture" accept="image/png,image/jpeg" required />
+
+        <button type="submit">Register</button>
+    </form>
+
+    <div class="footer">
+        <p>Already have an account? <a href="/ChatPages/Login">Login here</a></p>
+    </div>
+</div>
+
+<style>
+    .register-container {
+        background-color: #fff;
+        padding: 40px;
+        border-radius: 8px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        width: 350px;
+        text-align: center;
+        margin: 50px auto;
+    }
+
+    h2 {
+        margin-bottom: 20px;
+        color: #4CAF50;
+        font-weight: 600;
+    }
+
+    input {
+        width: 100%;
+        padding: 12px;
+        margin: 10px 0;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        font-size: 16px;
+        box-sizing: border-box;
+    }
+
+    button {
+        width: 100%;
+        padding: 12px;
+        background-color: #4CAF50;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        font-size: 16px;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+    .footer {
+        margin-top: 20px;
+        font-size: 14px;
+    }
+
+        .footer a {
+            color: #4CAF50;
+            text-decoration: none;
+        }
+
+            .footer a:hover {
+                text-decoration: underline;
+            }
+</style>
+
+<!-- ✅ SweetAlert2 CDN -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script>
+    document.getElementById('registerForm').addEventListener('submit', async function (event) {
+        event.preventDefault();
+
+        const fullName = document.getElementById("FullName").value.trim();
+        const username = document.getElementById("UserName").value.trim();
+        const email = document.getElementById("Email").value.trim();
+        const password = document.getElementById("Password").value;
+        const confirmPassword = document.getElementById("ConfirmPassword").value;
+          const fileInput = document.getElementById("ProfilePicture");
+        const file = fileInput.files[0];
+        console.log("image is ",fileInput);
+        // Check if any field is empty
+        if (!fullName || !username || !email || !password || !confirmPassword) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Missing Fields',
+                text: 'Please fill in all required fields.',
+                timer: 2500,
+                showConfirmButton: false
+            });
+            return;
+        }
+
+        // Check if passwords match
+        if (password !== confirmPassword) {
+            Swal.fire({
+                icon: 'warning',
+                title: 'Passwords Do Not Match',
+                text: 'Please make sure both passwords are the same.',
+                timer: 2500,
+                showConfirmButton: false
+            });
+            return;
+        }
+          const readFileAsBase64 = (file) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => {
+                    const base64 = reader.result.split(',')[1];
+                    resolve(base64);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        };
+         let base64Image = null;
+        if (file) {
+            try {
+                base64Image = await readFileAsBase64(file);
+            } catch (error) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'File Read Error',
+                    text: 'Could not read profile picture. Try another image.',
+                });
+                return;
+            }
+        }
+        const data = {
+            fullName: fullName,
+            userName: username,
+            email: email,
+            password: password,
+            profilePicture: base64Image // ✅ send base64 image
+        };
+
+        try {
+            const response = await fetch('/api/v1.0/auth/register', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            const result = await response.json();
+
+            if (response.ok) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Registration Successful!',
+                    text: result.message || "Redirecting to login...",
+                    timer: 2000,
+                    showConfirmButton: false
+                });
+
+                setTimeout(() => {
+                    window.location.href = "/ChatPages/Login";
+                }, 2000);
+            } else {
+                if (result.message && result.message.toLowerCase().includes("already")) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'User Already Registered',
+                        text: result.message,
+                        timer: 2500,
+                        showConfirmButton: false
+                    });
+                } else {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Registration Failed',
+                        text: result.message || "An error occurred.",
+                    });
+                }
+            }
+        } catch (error) {
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: 'Something went wrong. Please try again later.',
+            });
+        }
+    });
+</script>

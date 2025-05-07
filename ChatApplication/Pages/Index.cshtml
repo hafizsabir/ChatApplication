@@ -1,0 +1,111 @@
+﻿@page 
+@model IndexModel
+@{
+    ViewData["Title"] = "Home page";
+}
+
+<div class="text-center">
+    <div class="text-center">
+
+     
+       
+
+    </div>
+    
+</div>
+
+<script>
+      
+
+
+   
+     // The function to handle user registration via AJAX
+     // async function registerUser(event) {
+     //     event.preventDefault();  // Prevent the default form submission
+
+     //     const username = document.getElementById("username").value;
+     //     const email = document.getElementById("email").value;
+     //     const password = document.getElementById("password").value;
+     //     const confirmPassword = document.getElementById("confirmPassword").value;
+
+     //     if (password !== confirmPassword) {
+     //         alert("Passwords do not match.");
+     //         return;
+     //     }
+
+     //     const data = {
+     //         email: email,
+     //         password: password,
+     //         fullName: username  // Assuming fullName is the username in your case
+     //     };
+
+     //     // Make the AJAX POST request to your backend
+     //     const response = await fetch('/api/auth/Register', {
+     //         method: 'POST',
+     //         headers: {
+     //             'Content-Type': 'application/json'
+     //         },
+     //         body: JSON.stringify(data)  // Sending data to backend as JSON
+     //     });
+
+     //     // Parse the response from the backend
+     //     const result = await response.json();
+
+     //     // Check if the registration was successful
+     //     if (response.ok) {
+     //         alert(result.message || "Registration successful!");
+     //         // Optionally, redirect to another page (e.g., Login page)
+     //         window.location.href = "/ChatPages/Login";
+     //     } else {
+     //         alert(result.message || "An error occurred during registration.");
+     //     }
+     // }
+     // Register form submit event handler
+    // document.getElementById('registerForm').addEventListener('submit', async function(event) {
+    //     event.preventDefault(); // Prevent the form from submitting normally
+
+    //     // Get form values
+    //     const username = document.getElementById("username").value;
+    //     const email = document.getElementById("email").value;
+    //     const password = document.getElementById("password").value;
+    //     const confirmPassword = document.getElementById("confirmPassword").value;
+
+    //     // Validate if passwords match
+    //     if (password !== confirmPassword) {
+    //         alert("Passwords do not match.");
+    //         return;
+    //     }
+
+    //     const data = {
+    //         email: email,
+    //         password: password,
+    //         fullName: username
+    //     };
+
+    //     try {
+    //         // AJAX POST request to register user
+    //         const response = await fetch('/api/auth/Register', {
+    //             method: 'POST',
+    //             headers: {
+    //                 'Content-Type': 'application/json'
+    //             },
+    //             body: JSON.stringify(data) // Send form data as JSON
+    //         });
+
+    //         // Parse the response
+    //         const result = await response.json();
+
+    //         if (response.ok) {
+    //             alert(result.message || "Registration successful!");
+    //             window.location.href = "/ChatPages/Login";  // Redirect to login page
+    //         } else {
+    //             alert(result.message || "An error occurred during registration.");
+    //         }
+    //     } catch (error) {
+    //         alert("Something went wrong. Please try again later.");
+    //     }
+    // });
+
+
+
+</script>

@@ -1,0 +1,939 @@
+﻿@page
+@model ChatApplication.Pages.ChatPages.MainChatModel
+@{
+    ViewData["Title"] = "Chat Application";
+}
+
+<!-- Include SweetAlert CDN -->
+<link href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" rel="stylesheet" />
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+<!---------------library for front end jose ------------------------->
+
+
+
+
+<div style="display: flex; height: 80vh; box-shadow: 0 0 15px rgba(0, 0, 0, 0.1); background: #f4f4f4; overflow: hidden;">
+    <!-- Sidebar: Contact List with Search -->
+    <div style="width: 30%; background: #fff; border-radius: 10px 0 0 10px; padding: 20px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);">
+        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 20px;">
+            <!-- App Logo -->
+            <div style="font-size: 28px; font-weight: bold; color: #4CAF50; margin-bottom: 20px;">ChatApp</div>
+
+            <!-- Profile Picture -->
+            <div style="position: relative; display: flex; justify-content: center; align-items: center;">
+                <img id="profilePicture"
+                     src="/images/default-avatar.png"
+                     alt="Profile Picture"
+                     style="width: 100px; height: 100px; border-radius: 50%; margin-top: 12px; object-fit: cover; border: 3px solid #4CAF50; cursor: pointer; transition: border-color 0.3s ease-in-out;" onclick="triggerFileInput()" />
+                <div style="position: absolute; bottom: 0; right: 0; background: #4CAF50; width: 30px; height: 30px; border-radius: 50%; display: flex; justify-content: center; align-items: center; cursor: pointer; box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);" onclick="triggerFileInput()">
+                    <span style="color: white; font-size: 14px;">+</span>
+                </div>
+            </div>
+
+            <!-- User Info -->
+            <div style="font-size: 14px; margin-top: 12px; text-align: center; color: #333;">
+                <span style="color: #4CAF50; font-weight: bold; font-size: 16px;">@Model.CurrentUserName</span>
+                <p style="margin: 5px 0; color: #777;">
+                    <strong>
+                        <span style="margin-right: 6px; position: relative; top: 1px; width: 10px; height: 10px; border-radius: 50%; background: #85c563; display: inline-block;"></span>
+                    </strong>
+                    <span id="FullName" style="font-size: 14px;"></span>
+
+                    <span id="userName" style="font-size: 14px;"></span>
+
+                </p>
+                <p style="color: #777; font-size: 13px;" id="userEmail"></p>
+            </div>
+
+            <!-- Countdown Timer -->
+            <div id="countdownTimer" style="font-size: 16px; color: #777; font-weight: bold; margin-top: 15px;"></div>
+        </div>
+
+        <!-- Search Bar -->
+        <div style="margin-bottom: 15px;">
+            <input type="text"
+                   placeholder="Search contacts..."
+                   id="searchContacts"
+                   style="width: 100%; padding: 12px 15px; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; background: #f9f9f9; color: #333; outline: none; box-sizing: border-box; transition: border-color 0.3s ease-in-out;"
+                   onfocus="this.style.borderColor='#4CAF50'"
+                   onblur="this.style.borderColor='#ccc'" />
+        </div>
+
+        <!-- Contact List -->
+        <div id="contactList" style="flex-grow: 1; overflow-y: auto; max-height: calc(100vh - 200px);">
+            <!-- Add more contacts here -->
+        </div>
+
+        <!-- Hidden File Input for Image Upload -->
+        <input type="file" id="fileInput" style="display: none;" onchange="uploadProfilePicture(event)" />
+    </div>
+
+    <!-- Chat Window (Right Side) -->
+    <!-- Chat Window -->
+    <div style="width: 70%; display: flex; flex-direction: column; background: #fff; padding: 15px; border-radius: 0 10px 10px 0; box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);">
+        <div style="background: #85c563; color: #fff; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center;">
+            <div>
+                <h2 id="chatUserName" style="margin: 0; font-size: 20px;">John Doe</h2>
+                <span id="chatUserStatus" style="font-size: 14px; opacity: 0.8;">Online</span>
+            </div>
+            <button onclick="confirmLogout()" style="background: #e74c3c; border: none; padding: 8px 16px; border-radius: 4px; color: white; cursor: pointer;">Logout</button>
+
+        </div>
+    
+        <div id="chatMessages" style="flex: 1; padding: 20px; background: #f9f9f9; overflow-y: auto; display: flex; flex-direction: column;">
+            <!-- Chat messages will be appended here dynamically -->
+        </div>
+
+        <div style="display: flex; padding: 15px 20px; border-top: 1px solid #ddd; background: #fff;">
+            <input type="text" placeholder="Type your message here..." id="messageInput" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; outline: none;">
+            <button type="button" onclick="sendMessage()" style="padding: 10px 20px; margin-left: 10px; background: #4CAF50; border: none; border-radius: 4px; font-size: 16px; color: white; cursor: pointer; transition: background 0.3s;">Send</button>
+        </div>
+    </div>
+
+
+<!----------------------------- Profile Modal -------------------------------------->
+<div id="profileModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(0, 0, 0, 0.5); display: none; align-items: center; justify-content: center; z-index: 9999; backdrop-filter: blur(5px);">
+    <div style="background: #fff; padding: 30px; border-radius: 15px; width: 800px; position: relative; box-shadow: 0 0 10px rgba(0,0,0,0.3);">
+        <!-- Close Button -->
+        <span id="closeModal" style="position: absolute; top: 10px; right: 35px; font-size: 60px; cursor: pointer; color: #ff5c5c; font-weight: bold; transition: transform 0.3s ease, color 0.3s ease;">
+            &times;
+        </span>
+
+        <!-- Profile Picture Preview -->
+        <div style="text-align: center;">
+            <img id="modalProfilePicture" src="/images/default-avatar.png" style="width: 180px; height: 180px; border-radius: 50%; object-fit: cover; margin-bottom: 10px;" />
+            <input type="file" id="newProfilePictureInput" accept="image/*" onchange="previewNewProfilePicture(event)" style="margin-top: 10px;" />
+        </div>
+
+        <!-- Name Input -->
+        <div style="margin-top: 15px;">
+            <label>Full Name :</label>
+            <input type="text" id="FullNameEdit" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px;" />
+        </div>
+        <!-- UserName Input -->
+        <div style="margin-top: 15px;">
+            <label>User Name:</label>
+            <input type="text" id="userNameEdit" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px;" />
+        </div>
+
+        <!-- Email Display -->
+        <div style="margin-top: 15px;">
+            <label>Email:</label>
+            <input type="text" id="userEmailedit" disabled style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ccc; border-radius: 5px; background-color: #f0f0f0;" />
+        </div>
+
+        <!-- Save Button -->
+        <button onclick="saveProfileChanges()" style="margin-top: 20px; width: 100%; padding: 10px; background-color: #28a745; color: #fff; border: none; border-radius: 5px;">
+            Save Changes
+        </button>
+    </div>
+</div>
+<!----------------------------- Confirmation Modal -------------------------------------->
+<div id="confirmModal" style="position: fixed; top: 0; left: 0; width: 100%; height: 100vh; background: rgba(0,0,0,0.6); display: none; align-items: center; justify-content: center; z-index: 9998; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;">
+    <div style="background: #fff; padding: 30px 25px; border-radius: 15px; width: 400px; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.3); transition: all 0.3s ease;">
+
+        <!-- Close button -->
+        <span id="closeModalConfirmation" style="position: absolute; top: 12px; right: 20px; font-size: 30px; cursor: pointer; color: #ff5c5c; font-weight: bold; transition: transform 0.3s ease, color 0.3s ease;"
+              onmouseover="this.style.color='#e60000'; this.style.transform='scale(1.2)'"
+              onmouseout="this.style.color='#ff5c5c'; this.style.transform='scale(1)'">
+            &times;
+        </span>
+
+        <!-- Heading -->
+        <h2 style="text-align:center; margin-bottom: 25px; color: #333;">🔐 Confirm Your Identity</h2>
+
+        <!-- Email -->
+        <div style="margin-bottom: 20px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 500;">Email:</label>
+            <input type="text" id="verifyEmail" placeholder="Enter your email"
+                   style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px;" />
+        </div>
+
+        <!-- Password -->
+        <div style="margin-bottom: 25px;">
+            <label style="display: block; margin-bottom: 5px; font-weight: 500;">Password:</label>
+            <input type="password" id="verifyPassword" placeholder="Enter your password"
+                   style="width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px;" />
+        </div>
+
+        <!-- Button -->
+        <button onclick="confirmBeforeEdit()"
+                style="width: 100%; padding: 12px; background-color: #007bff; color: white; border: none; border-radius: 8px; font-size: 16px; font-weight: 600; transition: background-color 0.3s ease;"
+                onmouseover="this.style.backgroundColor='#0056b3'"
+                onmouseout="this.style.backgroundColor='#007bff'">
+            Continue
+        </button>
+    </div>
+</div>
+
+
+
+
+
+
+<style>
+    body {
+        margin: 0;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: #f4f4f4;
+    }
+
+    #profileModal {
+        opacity: 0;
+        transform: scale(0.8);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+        pointer-events: none;
+    }
+
+        #profileModal.show {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+
+    #closeModal {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        font-size: 28px;
+        cursor: pointer;
+        color: #ff5c5c;
+        font-weight: bold;
+        transition: transform 0.3s ease, color 0.3s ease;
+    }
+
+        #closeModal:hover {
+            color: #ff1e1e;
+            transform: scale(1.1);
+        }
+
+        #closeModal:active {
+            transform: scale(1.05);
+        }
+
+</style>
+
+
+@section Scripts {
+  
+    <script type="module">
+            import { jwtDecrypt } from 'https://cdn.jsdelivr.net/npm/jose@6.0.10/+esm';
+                 import {sessionState} from '/js/Sessionvariables.js';
+                 import {refreshToken,handleSessionExpiry,resetVerification,fetchContacts} from '/js/FuntionsofMainChat.js';
+                 // import {fetchUserInfo,confirmBeforeEdit} from '/js/UserData.js'
+             let tokenKey = "jwtToken";
+                     let selectedReceiverId = null;
+                     let senderId=null;
+                 const base64Key = "w4fGzqfLQDoDHHTls1pX+Hu4vu+o4JJWrgY1BhNHVFc=";
+            const secretKey = base64ToUint8Array(base64Key);
+                     window.AppConfig = {
+                             secretKey,
+         base64Key
+       
+        };
+
+                                    function sendMessage() {
+                const messageText = document.getElementById("messageInput").value.trim();
+                if (!messageText) {
+                    alert("Please type a message");
+                    return;
+                }
+
+                const token = localStorage.getItem(tokenKey); // Replace with your actual key
+
+                // Prepare the data to send
+                var  messageData = {
+                    ReceiverId: selectedReceiverId,
+                    MessageText: messageText ,
+                    SenderId : senderId        // FIXED: Capital "M"
+                };
+
+                console.log("The message data is:", messageData);
+                console.log("Token being sent:", token);
+
+                // AJAX request to send the message
+                $.ajax({
+                    url: '/api/v1.0/chat/sendchat',  // Endpoint to send the message
+                    method: 'POST',
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    },
+                    contentType: "application/json",  // Ensure this is set to JSON
+                    data: JSON.stringify(messageData), // Send data directly
+                    success: function(response) {
+                        if (response.success) {
+                            // Your success logic
+                                    document.getElementById("messageInput").value="";
+                                 console.log("The respose of mesg is ",response);
+                                 appendMessageToChatBox(response.data, senderId);
+
+                        } else {
+                            alert("Failed to send message");
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error("Error sending message", error);
+                    }
+                });
+            }
+                     function appendMessageToChatBox(message, currentUserId) {
+                const chatBox = document.getElementById("chatMessages");
+                const msgElement = document.createElement("div");
+
+                const isSender = message.senderId === currentUserId;
+
+                msgElement.style.alignSelf = isSender ? "flex-end" : "flex-start";
+                msgElement.style.background = isSender ? "#dcf8c6" : "#fff";
+                msgElement.style.padding = "10px";
+                msgElement.style.margin = "5px";
+                msgElement.style.borderRadius = "10px";
+                msgElement.style.maxWidth = "60%";
+                msgElement.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+
+                msgElement.innerHTML = `
+                    <div style="font-size: 16px;">${message.messageText}</div>
+                    <div style="font-size: 12px; text-align: right; color: gray;">
+                        ${new Date(message.timestamp).toLocaleTimeString()}
+                    </div>
+                `;
+
+                chatBox.appendChild(msgElement);
+                chatBox.scrollTop = chatBox.scrollHeight; // scroll to bottom
+            }
+
+
+                        // Example definition of loadMessagesWith function
+                                  function loadMessagesWith(userId) {
+                const token = localStorage.getItem(tokenKey);
+                         selectedReceiverId=userId;
+                const payload = {
+                    SenderId: senderId,      // global current user ID
+                            ReceiverId: selectedReceiverId   // selected contact ID
+                };
+
+                $.ajax({
+                    url: `/api/v1.0/chat/GetAllMessages`,
+                    type: "POST",
+                    contentType: "application/json",
+                    headers: {
+                        "Authorization": "Bearer " + token
+                    },
+                    data: JSON.stringify(payload),
+                    success: function (response) {
+                        if (response) {
+                            console.log("User Messages response is",response);
+                            const chatMessages = $("#chatMessages");
+                            chatMessages.empty(); // Clear previous messages
+
+                                  if (response.success && Array.isArray(response.data)) {
+                response.data.forEach(msg => {
+                    const isSender = msg.senderId === senderId;
+                    const messageHtml = `
+                        <div style="align-self: ${isSender ? 'flex-end' : 'flex-start'}; background: ${isSender ? '#dcf8c6' : '#fff'}; padding: 10px; border-radius: 8px; margin: 5px 0; max-width: 70%;">
+                            ${msg.messageText}
+                        </div>
+                    `;
+                    chatMessages.append(messageHtml);
+                });
+            } else {
+                // Agar koi message nahi mila
+                chatMessages.html(`<p class="text-muted">No messages found.</p>`);
+            }
+
+                            chatMessages.scrollTop(chatMessages[0].scrollHeight);
+                        }
+                    },
+                    error: function () {
+                        console.error("Failed to load chat messages.");
+                    }
+                });
+            }
+
+
+
+        window.sendMessage = sendMessage;
+
+        document.getElementById("searchContacts").addEventListener("input", function () {
+            const query = this.value.toLowerCase();
+            const contacts = document.querySelectorAll(".contact");
+            contacts.forEach(contact => {
+                const name = contact.querySelector(".contact-name").textContent.toLowerCase();
+                contact.style.display = name.includes(query) ? "flex" : "none";
+            });
+        });
+
+        function confirmLogout() {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'Do you really want to log out?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, log out',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    localStorage.removeItem(tokenKey);
+                    resetVerification();
+                    window.location.href = '/ChatPages/Login';
+                }
+            });
+        }
+        window.confirmLogout = confirmLogout;
+
+        history.pushState(null, null, location.href);
+        window.addEventListener('popstate', function (event) {
+            Swal.fire({
+                title: 'Are you sure?',
+                text: 'Do you really want to leave this page?',
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Yes, leave',
+                cancelButtonText: 'Stay here'
+            }).then((result) => {
+                if (result.isConfirmed) {
+                    window.location.href = '/ChatPages/Login';
+                } else {
+                    history.pushState(null, null, location.href);
+                }
+            });
+        });
+        
+                   $(document).ready(function () {
+                       debugger;
+
+                       loadProfileImage('profilePicture');
+                       //  fetchUserInfo();
+                      
+                         fetchContacts(tokenKey);
+
+        });
+        //-----------------------------------Chat Window Par Name Show Krwane ka name -=--------
+                  function startChat(element) {
+            // Get user data from the clicked contact div
+            const userId = element.getAttribute("data-user-id");
+            const fullName = element.getAttribute("data-full-name");
+            const isOnline = element.getAttribute("data-is-online") === "true";
+
+            // Set the chat window UI with the selected user's info
+            document.getElementById("chatUserName").innerText = fullName || "Name Not Available";
+
+            const statusSpan = document.getElementById("chatUserStatus");
+            if (isOnline) {
+                statusSpan.innerText = "Online";
+                statusSpan.style.color = "lightgreen";
+            } else {
+                statusSpan.innerText = "Offline";
+                statusSpan.style.color = "lightgray";
+            }
+                    // Remove border highlight from all
+            $(".contact").css("border", "2px solid transparent");
+
+            // Add border to selected one
+                    $(element).css("border", "2px solid #28a745");
+
+            // Now you have userId, you can fetch chat messages for this user
+            loadMessagesWith(userId);
+        }
+        window.startChat = startChat;
+
+
+     //  --------------------------------ConfirmationCall----------------------------
+                function confirmBeforeEdit() {
+            const token = localStorage.getItem(tokenKey);
+            const email = document.getElementById("verifyEmail").value;
+            const password = document.getElementById("verifyPassword").value;
+
+            if (!token || !email || !password) {
+                Swal.fire("Error", "Email and password are required.", "error");
+                return;
+            }
+
+            $.ajax({
+                url: "/api/v1.0/auth/VerifyForEditProfile",
+                method: "POST",
+                headers: {
+                    "Authorization": "Bearer " + token
+                },
+                contentType: "application/json",
+                data: JSON.stringify({ email, password }),
+                success: function (response) {
+                    if (response.success) {
+                        // Hide confirm modal
+                        document.getElementById("confirmModal").style.display = "none";
+                        localStorage.setItem("userVerified", "true");
+                        // Show profile modal (your existing modal)
+                        const modal = document.getElementById("profileModal");
+                        modal.style.display = "flex";
+                        void modal.offsetWidth;
+                        modal.classList.add("show");
+
+                        // Autofill data
+                        const username = document.getElementById('userName').innerText;
+                        const fullname = document.getElementById('FullName').innerText;
+                          const useremail = document.getElementById('userEmail').innerText;
+                        const profilePicture = document.getElementById('profilePicture').src;
+
+                        document.getElementById('userNameEdit').value = username;
+                        document.getElementById('FullNameEdit').value = fullname;
+                        document.getElementById('userEmailedit').value = useremail;
+                        document.getElementById('modalProfilePicture').src = profilePicture;
+
+                         //reset values
+                          document.getElementById("verifyEmail").value="";
+                          document.getElementById("verifyPassword").value="";
+                    } else {
+                        Swal.fire("Unauthorized", response.message || "Invalid credentials", "error");
+                    }
+                },
+                error: function (xhr) {
+                    Swal.fire("Error", "Verification failed.", "error");
+                }
+            });
+        }
+        window.confirmBeforeEdit=confirmBeforeEdit;
+    //   --------------------------------ye har dafa picture par click karny sy info update kary ga -----------------
+
+  
+
+        async function showUserData(){
+                const token = localStorage.getItem(tokenKey);
+            if (!token) return;
+
+            try {
+                const { payload } = await jwtDecrypt(token, window.AppConfig.secretKey);
+
+                document.getElementById("userNameEdit").value = payload.username || "";
+                document.getElementById("FullNameEdit").value = payload.fullname || "";
+                document.getElementById("userEmailedit").value = payload.email || "";
+
+              //  const pictureUrl = payload.profilePictureUrl || "/images/default-avatar.png";
+               // document.getElementById("modalProfilePicture").src = pictureUrl;
+               const profilePicture = document.getElementById('profilePicture').src;
+               document.getElementById('modalProfilePicture').src = profilePicture;
+                document.getElementById("profileModal").style.display = "flex";
+            } catch (error) {
+                console.error("Failed to populate modal:", error);
+            }
+              
+        }
+
+
+        //-----------------------------Front end sy PopUp or sath me picture or name Edit---------------------
+
+               // Open modal on profile picture click
+               document.getElementById("profilePicture").onclick = function () {
+                    const isVerified = localStorage.getItem("userVerified") === "true";
+                    if(isVerified){
+                          const modal = document.getElementById("profileModal");
+                        modal.style.display = "flex";
+                        void modal.offsetWidth;
+                        modal.classList.add("show");
+                                showUserData();
+                    }
+                    else{
+                           const modal = document.getElementById("confirmModal");
+        modal.style.display = "flex";
+        void modal.offsetWidth; // force reflow
+        modal.classList.add("show");
+                    }
+             
+        };
+        // reset verification for edit info
+        //         function resetVerification() {
+        //     localStorage.removeItem("userVerified");
+        // }
+
+        // Close modal
+        document.getElementById("closeModal").onclick = function () {
+            const modal = document.getElementById("profileModal");
+            modal.classList.remove("show");
+
+            // Wait for animation to finish before hiding
+            setTimeout(() => {
+                modal.style.display = "none";
+            }, 300); // match CSS transition time
+        };
+                document.getElementById("closeModalConfirmation").onclick = function () {
+            const modal = document.getElementById("confirmModal");
+            modal.classList.remove("show");
+
+            // Wait for animation to finish before hiding
+            setTimeout(() => {
+                modal.style.display = "none";
+            }, 300); // match CSS transition time
+        };
+        // Preview picture in modal before upload
+        function previewNewProfilePicture(event) {
+            console.log("prew image cgala hai ????????????????????????????????????????");
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById("modalProfilePicture").src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+        window.previewNewProfilePicture = previewNewProfilePicture;
+
+        // Save changes via AJAX
+               async function saveProfileChanges() {
+            try {
+                const token = localStorage.getItem(tokenKey);
+                if (!token) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Unauthorized',
+                        text: 'Please log in again.'
+                    });
+                    return;
+                }
+
+                const { payload } = await jwtDecrypt(token, window.AppConfig.secretKey);
+
+                const expiryTime = new Date(payload.exp * 1000);
+                const currentTime = new Date();
+                const remainingMilliseconds = expiryTime - currentTime;
+                // Convert remaining time to seconds
+                 const remainingSeconds = Math.floor(remainingMilliseconds / 1000); // in seconds
+               console.log("Remaining time in seconds:", remainingSeconds);  // this is what you need
+                 const remainingMinutes = Math.floor(remainingMilliseconds / 60000);
+                // const remainingSeconds = Math.floor((remainingMilliseconds % 60000) / 1000);
+                  console.log("the time remaining is ",remainingSeconds);
+                const username = document.getElementById('userNameEdit').value;
+                const email = document.getElementById('userEmailedit').value;
+                const fullname = document.getElementById('FullNameEdit').value;
+                const file = document.getElementById('newProfilePictureInput').files[0];
+                console.log("Remaining time: " + remainingMinutes + " minutes and " + remainingSeconds + " seconds.");
+                const formData = new FormData();
+                if (file) {
+                    formData.append("profilePicture", file);
+                }
+
+                formData.append("email", email);
+                formData.append("FullName", fullname);
+                formData.append("UserName", username);
+                formData.append("TimeRemaining", remainingSeconds);
+
+                $.ajax({
+                    url: "/api/v1.0/auth/UpdateUserInfo",
+                    method: 'POST',
+                    headers: {
+                        'Authorization': 'Bearer ' + token
+                    },
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function (response) {
+                        if (response.success) {
+                            console.log("The updated data is:", response);
+                            const newToken = response.data.regeneratedToken;
+                            localStorage.setItem(tokenKey, newToken);
+                            console.log("The new generated token is:", newToken);
+                           console.log("The updated time is ");
+                            console.log("Update UI FullName is:", fullname);
+                            console.log("Update UI Username is:", username);
+
+                            document.getElementById("FullName").innerText = fullname;
+                            document.getElementById("userName").innerText = username;
+                            startSessionCycle();
+
+                            if (file) {
+                                const reader = new FileReader();
+                                reader.onload = function (e) {
+                                    document.getElementById("profilePicture").src = e.target.result;
+                                };
+                                reader.readAsDataURL(file);
+                            }
+
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Profile Updated',
+                                showConfirmButton: false,
+                                timer: 2000
+                            });
+
+                            document.getElementById("profileModal").style.display = "none";
+                        } else {
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'Error',
+                                text: response.message || 'Profile update failed.'
+                            });
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Request Failed',
+                            text: 'Something went wrong while updating profile.'
+                        });
+                        console.error("Upload failed:", error);
+                    }
+                });
+            } catch (error) {
+                console.error("Decryption or update error:", error);
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Something went wrong',
+                    text: 'Failed to update profile. Please try again later.'
+                });
+            }
+        }
+
+        window.saveProfileChanges = saveProfileChanges;
+
+
+
+        //-----------------------------------Front end sy Profile Picture Edit----------------------------------------------
+
+        function uploadProfilePicture(event) {
+            const token = localStorage.getItem(tokenKey);
+            if (!token) {
+                console.error("Token missing");
+                return;
+            }
+
+            const file = event.target.files[0];
+            if (!file) {
+                console.error("No file selected");
+                return;
+            }
+             const email = document.getElementById("userEmail").innerText;
+            const formData = new FormData();
+            formData.append("profilePicture", file);
+             formData.append("email", email);
+             debugger
+            $.ajax({
+                url: "/api/v1.0/auth/UpdateProfilePicture",  // Update with your server endpoint
+                method: 'POST',
+                headers: {
+                    'Authorization': 'Bearer ' + token
+                },
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    // After successful upload, update the profile image
+                     debugger
+                      console.log("Full Response: ", response);
+                    const newImageBase64 = response.data.profilePicture;
+                    const mimeType = newImageBase64.startsWith("iVBORw0KGgo") ? "image/png" :
+                                    newImageBase64.startsWith("/9j/") ? "image/jpeg" :
+                                    "image/gif";  // Detect MIME type
+                                     console.log("Update profile picture chala hai code001");
+                    const src = `data:${mimeType};base64,${newImageBase64}`;
+                    document.getElementById('profilePicture').setAttribute('src', src);
+                      // ✅ Save the new regenerated token
+            if (response.data.regeneratedToken) {
+                        console.log("The New Generated Token is : ",response.data.regeneratedToken);
+
+                // Save the new token and expiry time
+                localStorage.setItem(tokenKey, response.data.regeneratedToken);
+                localStorage.setItem("tokenExpiryTime", response.data.tokenExpiryTime);
+
+                console.log("Token and expiry time updated after profile change");
+            }
+                    console.log("Profile image updated successfully");
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error uploading image:", error);
+                }
+            });
+        }
+        window.uploadProfilePicture = uploadProfilePicture;
+         //-------------------------------------------------My new work on front end side decryption--------------------------
+
+
+               async function decryptJweToken() {
+
+            const encryptedToken = localStorage.getItem(tokenKey); // JWE token stored in browser
+
+            if (!encryptedToken) {
+                console.error("No token found in localStorage.");
+                return;
+            }
+
+            // 🔐 Symmetric Key from backend (same as in appsettings.json)
+         //   const rawKey = "P93yJ0x4XUh8z6TVMY+9Z4F1i0NnvmDQosKbapWQjYY=";
+          // const secretKey = new TextEncoder().encode(rawKey); // Required for jose lib
+
+            try {
+                // Extract and decrypt token using JOSE
+                const { jwtDecrypt } = jose;
+
+                const { payload } = await jwtDecrypt(encryptedToken, AppConfig.secretKey, {
+                    issuer: "ChatApplication",
+                    audience: "ChatApplicationUsers"
+                });
+
+
+
+                console.log("Decrypted Payload:", payload);
+             document.getElementById("userName").textContent = payload.username || "Unknown";
+            document.getElementById("FullName").textContent = payload.fullname || "Unknown";
+            document.getElementById("userEmail").textContent = payload.email || "Unknown";
+
+
+                 console.log("user name is ",username, "Email is ",email);
+
+            } catch (err) {
+                console.error("Failed to decrypt JWE:", err);
+            }
+        }
+
+
+
+
+
+        //----------------------------------------------------My Old Work SSR Token Decryption Work------------------------------------------------------
+
+                     function loadProfileImage(imageElementId) {
+            const token = localStorage.getItem(tokenKey);
+            if (!token) {
+                console.error("Token missing");
+                return;
+            }
+
+            $.ajax({
+                url: "/api/v1.0/auth/GetProfilePicture",
+                method: 'GET',
+                headers: { 'Authorization': 'Bearer ' + token },
+                success: function (data) {
+                   // console.log("Image data:", data);
+                  //  console.log("Base64 Image Data:", data.data?.profilePicture);
+                    console.log("getprofileimage chala hai");
+                    const base64 = data?.data?.profilePicture;
+
+                    if (!base64) {
+                        console.warn("No image found");
+                        return;
+                    }
+
+                    // Detect MIME type from Base64 string
+                    let mimeType = "image/jpeg"; // default
+                    if (base64.startsWith("iVBORw0KGgo")) mimeType = "image/png";
+                    else if (base64.startsWith("/9j/")) mimeType = "image/jpeg";
+                    else if (base64.startsWith("R0lGOD")) mimeType = "image/gif";
+
+                    const src = `data:${mimeType};base64,${base64}`;
+                    $('#' + imageElementId).attr('src', src);
+                     // Save the image to localStorage
+                   // localStorage.setItem('profileImage', src); // Save Base64 image to localStorage
+                },
+                error: function (xhr, status, error) {
+                    console.error('Error fetching image:', error);
+                }
+            });
+        }
+
+
+           // const base64Key = "w4fGzqfLQDoDHHTls1pX+Hu4vu+o4JJWrgY1BhNHVFc=";
+           // const secret = base64ToUint8Array(base64Key);
+
+           let countdownTimer = null;
+          let isRefreshing = false;
+            let lastActivityTime = Date.now();
+                 setupActivityTracking();
+               let isNotWorked=true;
+               console.log("awara dil mera ");
+            if(isNotWorked){
+            startSessionCycle();
+
+            }
+            
+           
+
+            function base64ToUint8Array(base64) {
+                const binary = atob(base64);
+                const bytes = new Uint8Array(binary.length);
+                for (let i = 0; i < binary.length; i++) {
+                    bytes[i] = binary.charCodeAt(i);
+                }
+                return bytes;
+            }
+
+            function setupActivityTracking() {
+                const events = ["mousemove", "keypress", "scroll"];
+                events.forEach(event => {
+                    document.addEventListener(event, () => {
+                        lastActivityTime = Date.now();
+                    });
+                });
+            }
+
+            async function startSessionCycle() {
+                const token = localStorage.getItem(tokenKey);
+                if (!token) return;
+
+                  try {
+            const { payload } = await jwtDecrypt(token, AppConfig.secretKey);
+            updateUserUI(payload);
+         
+            
+            const expiryTime = new Date(payload.exp * 1000); // token expiration time
+            const currentTime = Date.now(); // current time in milliseconds
+            const halfDuration = (expiryTime - currentTime) / 2;
+
+            const halfMidTime = new Date(currentTime + halfDuration);
+            console.log("✅ Token expires at:", expiryTime);
+            console.log("⏱️ Halfway to expiry at:", halfMidTime);
+
+            clearInterval(countdownTimer);
+
+            countdownTimer = setInterval(async () => {
+                const now = new Date();
+                const diff = expiryTime - now;
+
+                if (diff <= 0) {
+                    const idleTime = Date.now() - lastActivityTime;
+
+                    if (idleTime <= halfDuration && !isRefreshing) {
+                        console.log("🔁 Refreshing token due to activity...");
+
+                        isRefreshing = true;
+                        await refreshToken(tokenKey,sessionState);
+
+                        clearInterval(countdownTimer);
+                        isRefreshing = false;
+                        startSessionCycle();
+                    } else {
+                        console.log("🔒 Session expired due to inactivity.");
+                        handleSessionExpiry(tokenKey,resetVerification);
+                    }
+
+                    return;
+                }
+
+                updateCountdown(diff); // Optional: shows timer on screen
+            }, 1000);
+
+        } catch (err) {
+            console.error("❌ Token decryption failed:", err);
+        }
+            }
+
+            function updateUserUI(payload) {
+                document.getElementById("userName").textContent = payload.username || "Unknown";
+                document.getElementById("FullName").textContent = payload.fullname || "Unknown";
+                document.getElementById("userEmail").textContent = payload.email || "Unknown";
+                console.log("The data of payload is:", payload);
+                           senderId=payload.sub;
+                           console.log("sub is --------------------------------",payload.sub);
+            }
+
+            function updateCountdown(diff) {
+                const mins = Math.floor(diff / 60000);
+                const secs = Math.floor((diff % 60000) / 1000);
+                document.getElementById("countdownTimer").textContent = `Session expires in ${mins}m ${secs}s`;
+            }
+
+    </script>
+
+
+
+
+
+}
