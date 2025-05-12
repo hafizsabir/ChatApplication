@@ -7,6 +7,18 @@ namespace ChatApplication.Models.Responses.Common
         // ✅ General 
         [Description("File is not uploaded")]
         NoFileUploaded,
+        [Description("User Updated SuccessFully")]
+        UserUpdatedSuccessFully,
+        [Description("User Failed To Update")]
+        UserFailedToUpdate,
+        [Description("User Deleted SuccessFully")]
+        UserDeletedSuccessfully,
+        [Description("User Failed to Delete")]
+        UserFailedToDelete,
+        [Description("Role Assigned Successfully")]
+        RoleAssignedSuccessFully,
+        [Description("Role Assignment failed")]
+        RoleAsignmentFailed,
         [Description("All Messages Retrieved SuccessFully")]
         MessagesRetrievedSuccessFully,
         [Description("Messages Failed to Retrieved")]

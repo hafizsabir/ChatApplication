@@ -16,6 +16,7 @@ using System.Net;
 using ChatApplication.Models.ChatMessageModel.UserInfo;
 using ChatApplication.Models.UpdateRequestModels;
 using ChatApplication.Models.UpdateRequestModels.UpdatedProfileData;
+using ChatApplication.Models.ChatMessageModel;
 
 
 namespace ChatApplication.Services
@@ -27,7 +28,6 @@ namespace ChatApplication.Services
         private readonly ITokenService _tokenService;
         private readonly OTPSetting _otpSetting;
         private readonly IEncryptedTokenService _encryptedTokenService;
-
         public UserServices(IOptions<OTPSetting> OtpSetting,IUserRepository userRepository, IEmailService emailService, ITokenService tokenService, IEncryptedTokenService encryptedTokenService)
         {
             _userRepository = userRepository;
@@ -37,7 +37,34 @@ namespace ChatApplication.Services
             _encryptedTokenService = encryptedTokenService;
         }
 
+        public async Task<InterlinkResponse<UpdateUserRequest>> UpdateUser(UpdateUserRequest request)
+        {
+            var response = await _userRepository.UpdateUserAsnyc(request);
+            if (response == null)
+            {
+                return InterlinkResponse<UpdateUserRequest>.FailResponse(
 
+                    message: ResponseMessages.UserNotFound.GetDescription(),
+                   statusCode: ErrorCodes.NotFound
+                 );
+            }
+            return InterlinkResponse<UpdateUserRequest>.SuccessResponse(response.Data, response.Message, response.StatusCode);
+
+        }
+        public async Task<InterlinkResponse<string>> RemoveUser(string email)
+        {
+            var response = await _userRepository.DeleteUserAsync(email);
+            if (response == null)
+            {
+                return InterlinkResponse<string>.FailResponse(
+
+                    message: ResponseMessages.UserNotFound.GetDescription(),
+                   statusCode: ErrorCodes.NotFound
+                 );
+            }
+            return InterlinkResponse<string>.SuccessResponse(response.Data,response.Message,response.StatusCode);
+            
+        }
         public async Task<InterlinkResponse<UpdatedProfileDataDTO>> UpdateProfileAsync(UpdateProfileRequest updateProfileRequest)
         {
              try
@@ -63,7 +90,7 @@ namespace ChatApplication.Services
                 
                 };
                  
-                var NewToken =  _tokenService.GenerateUpdatedInfoToken(applicationUser,updateProfileRequest.TimeRemaining);
+                var NewToken =await _tokenService.GenerateUpdatedInfoToken(applicationUser,updateProfileRequest.TimeRemaining);
                   if(string.IsNullOrEmpty(NewToken))
                 {
                     return InterlinkResponse<UpdatedProfileDataDTO>.FailResponse(
@@ -181,10 +208,6 @@ namespace ChatApplication.Services
                 );
             }
         }
-
-
-
-
 
         public async Task<InterlinkResponse<UserInfoDto>> GetUserInfoFromRequest(string token)
         {
@@ -317,7 +340,7 @@ namespace ChatApplication.Services
 
             // Send login success email
           
-            var token = _tokenService.GenerateToken(user);
+            var token = await _tokenService.GenerateToken(user);
             
             
               
@@ -366,7 +389,7 @@ namespace ChatApplication.Services
                 if(!repoResponse.Data.TwoFactorEnabled)
                 {
                     // Generate token and return
-                    var token = _tokenService.GenerateToken(repoResponse.Data);
+                    var token =await _tokenService.GenerateToken(repoResponse.Data);
 
                     var loginResp = new LoginResponseDto
                     {

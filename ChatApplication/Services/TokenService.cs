@@ -5,6 +5,8 @@ using Microsoft.Extensions.Logging;
 using Jose;
 using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Identity;
+using System.Security.Claims;
 
 namespace ChatApplication.Services
 {
@@ -12,13 +14,15 @@ namespace ChatApplication.Services
     {
         private readonly IConfiguration _configuration;
         private readonly ILogger<TokenService> _logger;
+        private readonly UserManager<ApplicationUser> _userManager;
 
-        public TokenService(IConfiguration configuration, ILogger<TokenService> logger)
+        public TokenService(IConfiguration configuration, ILogger<TokenService> logger, UserManager<ApplicationUser> userManager)
         {
             _configuration = configuration;
             _logger = logger;
+            _userManager = userManager;
         }
-        public string GenerateUpdatedInfoToken(ApplicationUser user, double timeRemaining)
+        public async Task<string> GenerateUpdatedInfoToken(ApplicationUser user, double timeRemaining)
         {
             try
             {
@@ -104,7 +108,7 @@ namespace ChatApplication.Services
                 throw new InvalidOperationException("Error generating encrypted JWT token.", ex);
             }
         }
-        public string GenerateToken(ApplicationUser user)
+        public async Task<string> GenerateToken(ApplicationUser user)
         {
             try
             {
@@ -118,27 +122,25 @@ namespace ChatApplication.Services
                     throw new InvalidOperationException("Missing JWT configuration.");
                 }
 
-                var key = Convert.FromBase64String(keyString); // Decode base64 to 256-bit key
+                var key = Convert.FromBase64String(keyString);
                 var expiryMinutes = _configuration.GetValue<int>("OTP:ExpiryTimeOpt");
-                // Create JWT payload
+
+                var roles = await _userManager.GetRolesAsync(user);
+
+                // If only one role, store it as a string for ASP.NET Role claim matching
                 var payload = new Dictionary<string, object>
-                {
-                    { "sub", user.Id },
-                    { "username", user.UserName },
-                    { "email", user.Email },
-                    { "fullname", user.FullName },
+        {
+            { "sub", user.Id },
+            { "username", user.UserName },
+            { "email", user.Email },
+            { "fullname", user.FullName },
+            { ClaimTypes.Role, roles.Count == 1 ? roles[0] : roles }, // 👈 for [Authorize(Roles = "Admin")]
+            { "iss", issuer },
+            { "aud", audience },
+            { "exp", DateTimeOffset.UtcNow.AddMinutes(expiryMinutes).ToUnixTimeSeconds() }
+        };
 
-                  //  {"profilePicture",user.ProfilePictureBase64 },
-                    { "iss", issuer },
-                    { "aud", audience },
-                
-                    
-                    { "exp", DateTimeOffset.UtcNow.AddMinutes(expiryMinutes).ToUnixTimeSeconds() } // Token expiration (1 day)
-                };
-
-                // Encrypt the payload using JOSE (JWE - encryption)
-                var token = JWT.Encode(payload, key, JweAlgorithm.DIR, JweEncryption.A256GCM);  // Use JWE encryption
-
+                var token = JWT.Encode(payload, key, JweAlgorithm.DIR, JweEncryption.A256GCM);
                 _logger.LogInformation("Encrypted JWT token generated successfully.");
                 return token;
             }
@@ -148,6 +150,8 @@ namespace ChatApplication.Services
                 throw new InvalidOperationException("Error generating encrypted JWT token.", ex);
             }
         }
-         
+
+
+
     }
 }

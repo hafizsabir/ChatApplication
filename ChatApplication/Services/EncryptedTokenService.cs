@@ -52,6 +52,20 @@ namespace ChatApplication.Services
 
                 if (payload.TryGetValue("email", out var email))
                     claims.Add(new Claim(ClaimTypes.Email, email.ToString()));
+                if (payload.TryGetValue(ClaimTypes.Role, out var rolesElement))
+                {
+                    if (rolesElement.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var role in rolesElement.EnumerateArray())
+                        {
+                            claims.Add(new Claim(ClaimTypes.Role, role.GetString() ?? string.Empty));
+                        }
+                    }
+                    else
+                    {
+                        claims.Add(new Claim(ClaimTypes.Role, rolesElement.ToString()));
+                    }
+                }
                 //if (payload.TryGetValue("ProfilePicture", out var profilePicture))
                 //{
                 //    claims.Add(new Claim("ProfilePicture", profilePicture.ToString()));

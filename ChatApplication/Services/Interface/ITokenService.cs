@@ -4,8 +4,8 @@ namespace ChatApplication.Services.Interface
 {
     public interface ITokenService
     {
-        string GenerateToken(ApplicationUser user);
-        string GenerateUpdatedInfoToken(ApplicationUser user,double timeRemaining);
+        Task<string> GenerateToken(ApplicationUser user);
+       Task< string> GenerateUpdatedInfoToken(ApplicationUser user,double timeRemaining);
 
 
         string TrustedDeviceToken(ApplicationUser user);

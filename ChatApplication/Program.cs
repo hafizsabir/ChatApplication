@@ -1,4 +1,4 @@
-using ChatApplication.Data;
+﻿using ChatApplication.Data;
 using ChatApplication.Models._2FA_Models;
 using ChatApplication.Models;
 using ChatApplication.Repository.Interface;
@@ -15,7 +15,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using ChatApplication.Models.ChatMessageModel;
+using ChatApplication.RolesAuthorization;
 //using ChatApplication.MiddleWare;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -103,7 +105,12 @@ builder.Services.AddScoped<IEncryptedTokenService, EncryptedTokenService>();
 
 
 var app = builder.Build();
-
+// Seed roles asynchronously
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    await RoleSeeder.SeedRolesAsync(services);
+}
 // Middleware configuration
 if (!app.Environment.IsDevelopment())
 {
@@ -115,8 +122,9 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 
 app.UseRouting();
+//app.UseMiddleware<EncryptedTokenMiddleware>(); // 🔐 Must come first
+
 app.UseAuthentication(); // required before UseAuthorization
-//app.UseMiddleware<JwtDecryptionMiddleware>(); // ?? Our custom JWT decryptor
 
 app.UseAuthorization();
 app.MapRazorPages();

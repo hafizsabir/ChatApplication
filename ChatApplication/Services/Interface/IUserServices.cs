@@ -1,5 +1,6 @@
 ﻿using ChatApplication.Models;
 using ChatApplication.Models._2FA_Models;
+using ChatApplication.Models.ChatMessageModel;
 using ChatApplication.Models.ChatMessageModel.UserInfo;
 using ChatApplication.Models.DTO;
 using ChatApplication.Models.ResetPassword;
@@ -17,6 +18,8 @@ namespace ChatApplication.Services.Interface
         //  Task<InterlinkResponse<string>> LoginAsync(string email, string password);
         // Task<InterlinkResponse<string>> RegisterAsync(string FullName, string Email, string Password);
 
+        Task<InterlinkResponse<string>> RemoveUser(string token);
+        Task<InterlinkResponse<UpdateUserRequest>> UpdateUser(UpdateUserRequest token);
 
         Task<InterlinkResponse<UpdatedProfileDataDTO>> UpdateProfileAsync(UpdateProfileRequest updateProfileRequest);
         Task<InterlinkResponse<ProfilePictureDto>> GetProfilePictureAsync(string token);

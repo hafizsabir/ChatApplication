@@ -17,6 +17,8 @@ using Microsoft.AspNetCore.Identity;
 using ChatApplication.Models.UpdateRequestModels;
 using ChatApplication.Models.UpdateRequestModels.UpdatedProfileData;
 using Microsoft.AspNetCore.Identity.Data;
+using ChatApplication.Models.ChatMessageModel;
+using ChatApplication.CustomFilters;
 
 namespace ChatApplication.Controllers
 {
@@ -216,6 +218,31 @@ namespace ChatApplication.Controllers
         statusCode: response.StatusCode
             ));
         }
-
+        // [Authorize(Roles = "Admin")]
+        [RoleAuthorize("Admin")]
+        [HttpPost("delete-user")]
+        public async Task<IActionResult> DeleteUser([FromBody] DeleteUserRequest request)
+        {
+            var response = await _userServices.RemoveUser(request.email);
+            return StatusCode((int)response.StatusCode, new ApiResponse<string>(
+                response.Success,
+                response.Data,
+                response.Message,
+                response.StatusCode
+            ));
+        }
+        //[Authorize(Roles = "Admin")]
+        [RoleAuthorize("Admin")]
+        [HttpPut("update-user")]
+        public async Task<IActionResult> UpdateUser([FromBody] UpdateUserRequest request)
+        {
+            var response = await _userServices.UpdateUser(request);
+            return StatusCode((int)response.StatusCode, new ApiResponse<UpdateUserRequest>(
+                response.Success,
+                response.Data,
+                response.Message,
+                response.StatusCode
+            ));
+        }
     }
 }

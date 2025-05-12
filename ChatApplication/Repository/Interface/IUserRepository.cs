@@ -1,5 +1,6 @@
 ﻿using ChatApplication.Models;
 using ChatApplication.Models._2FA_Models;
+using ChatApplication.Models.ChatMessageModel;
 using ChatApplication.Models.ChatMessageModel.UserInfo;
 using ChatApplication.Models.DTO;
 using ChatApplication.Models.ResetPassword;
@@ -22,5 +23,9 @@ namespace ChatApplication.Repository.Interface
         Task<InterlinkResponse<UserOtp>> GetOtpAsync(string userId);
         Task<InterlinkResponse<string>> GeneratePasswordResetTokenAsync(string email);
         Task<InterlinkResponse<string>> ResetPasswordAsync(ResetPasswordModel model);
+        Task<InterlinkResponse<string>> DeleteUserAsync(string email);
+        Task<InterlinkResponse<UpdateUserRequest>> UpdateUserAsnyc(UpdateUserRequest request);
+
+
     }
 }

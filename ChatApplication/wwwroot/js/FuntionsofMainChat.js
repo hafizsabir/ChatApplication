@@ -31,7 +31,7 @@ export function fetchContacts(tokenKey) {
     data-full-name="${user.fullName}" 
     data-is-online="${isOnline}" 
     onclick="startChat(this)"
-    style="display: flex; align-items: center; padding: 10px; margin-bottom: 10px; border-radius: 4px; cursor: pointer; background: ${isOnline ? '#4CAF50' : '#f1f1f1'}; position: relative; border: 2px solid transparent;">
+    style="display: flex; align-items: center; padding: 10px; margin-bottom: 10px; border-radius: 4px; cursor: pointer; background: ${isOnline ? '#4CAF50' : '#fff'}; position: relative; border: 2px solid transparent; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
     <img src="${user.profilePicture ? `data:image/png;base64,${user.profilePicture}` : '/Images/default.png'}"
         alt="${user.profilePicture}"
         style="width: 45px; height: 45px; border-radius: 50%; margin-right: 10px; object-fit: cover;">

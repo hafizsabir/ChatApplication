@@ -2,6 +2,7 @@
 using ChatApplication.Data;
 using ChatApplication.Models;
 using ChatApplication.Models._2FA_Models;
+using ChatApplication.Models.ChatMessageModel;
 using ChatApplication.Models.ChatMessageModel.UserInfo;
 using ChatApplication.Models.DTO;
 using ChatApplication.Models.ResetPassword;
@@ -30,6 +31,91 @@ namespace ChatApplication.Repository
             _userManager = userManager;
             _context = context;
         }
+        public async Task<InterlinkResponse<UpdateUserRequest>>UpdateUserAsnyc(UpdateUserRequest request)
+        {
+            try
+            {
+                var user = await _userManager.FindByIdAsync(request.UserId);
+                if (user == null)
+                {
+                    return InterlinkResponse<UpdateUserRequest>.FailResponse(
+                        message: ResponseMessages.UserNotFound.GetDescription(),
+                        statusCode: ErrorCodes.NotFound
+                    );
+                }
+
+                // Update properties
+                user.FullName = request.FullName;
+                user.UserName = request.UserName;
+
+                var result = await _userManager.UpdateAsync(user);
+                if (result.Succeeded)
+                {
+                    return InterlinkResponse<UpdateUserRequest>.SuccessResponse(
+                        request,
+                        message: ResponseMessages.UserUpdatedSuccessFully.GetDescription(),
+                        statusCode: ErrorCodes.OK
+                    );
+                }
+
+                return InterlinkResponse<UpdateUserRequest>.FailResponse(
+                    message: string.Join("; ", result.Errors.Select(e => e.Description)),
+                    statusCode: ErrorCodes.BadRequest
+                );
+            }
+            catch (Exception)
+            {
+                return InterlinkResponse<UpdateUserRequest>.FailResponse(
+                    message: ResponseMessages.InternalServerError.GetDescription(),
+                    statusCode: ErrorCodes.InternalServerError
+                );
+            }
+        }
+
+        public async Task<InterlinkResponse<string>> DeleteUserAsync(string email)
+        {
+            try
+            {
+                var user = await _userManager.FindByEmailAsync(email);
+                if (user == null)
+                {
+                    return InterlinkResponse<string>.FailResponse(
+                        message: ResponseMessages.UserNotFound.GetDescription(),
+                        statusCode: ErrorCodes.NotFound
+                    );
+                }
+
+              
+                var messages = _context.ChatMessages
+                    .Where(m => m.SenderId == user.Id || m.ReceiverId == user.Id);
+                _context.ChatMessages.RemoveRange(messages);
+                await _context.SaveChangesAsync(); // Save message deletions first
+                // Now delete the user
+                var result = await _userManager.DeleteAsync(user);
+                if (result.Succeeded)
+                {
+                    return InterlinkResponse<string>.SuccessResponse(
+                        email,
+                        message: ResponseMessages.UserDeletedSuccessfully.GetDescription(),
+                        statusCode: ErrorCodes.OK
+                    );
+                }
+
+                return InterlinkResponse<string>.FailResponse(
+                    message: string.Join("; ", result.Errors.Select(e => e.Description)),
+                    statusCode: ErrorCodes.BadRequest
+                );
+            }
+            catch (Exception)
+            {
+                return InterlinkResponse<string>.FailResponse(
+                    message: ResponseMessages.InternalServerError.GetDescription(),
+                    statusCode: ErrorCodes.InternalServerError
+                );
+            }
+        }
+
+
         public async Task<InterlinkResponse<UpdatedProfileDataDTO>> UpdateProfilePictureAsync(string base64Image, UpdateProfileRequest updateProfileRequest)
         {
             try
@@ -137,9 +223,6 @@ namespace ChatApplication.Repository
                 return InterlinkResponse<IList<UserListInfo>>.FailResponse(message: ResponseMessages.NotAnyUserFound.GetDescription(), statusCode: ErrorCodes.NotFound);
             }
         }
-
-
-
 
         public async Task<InterlinkResponse<string>> GeneratePasswordResetTokenAsync(string email)
         {
@@ -259,7 +342,6 @@ namespace ChatApplication.Repository
             }
         }
         // get user from database 
-
         public async Task<InterlinkResponse<ApplicationUser>> FindByEmail(string email)
         {
             try
@@ -296,6 +378,7 @@ namespace ChatApplication.Repository
         {
             try
             {
+                // Check if user already exists by email
                 var userExists = await _userManager.FindByEmailAsync(user.Email);
                 if (userExists != null)
                 {
@@ -305,7 +388,9 @@ namespace ChatApplication.Repository
                         ErrorCodes.Registration_UserAlreadyExists
                     );
                 }
-                var NewUSer = new ApplicationUser
+
+                // Create a new ApplicationUser object
+                var newUser = new ApplicationUser
                 {
                     FullName = user.FullName,
                     UserName = user.UserName, // required by Identity
@@ -314,14 +399,32 @@ namespace ChatApplication.Repository
                     ProfilePictureBase64 = user.ProfilePicture
                 };
 
-                var result = await _userManager.CreateAsync(NewUSer, NewUSer.Password);
+                // Create the user
+                var result = await _userManager.CreateAsync(newUser, newUser.Password);
 
                 if (result.Succeeded)
                 {
-                    return InterlinkResponse<IdentityResult>.SuccessResponse(
-                        result,
-                        ResponseMessages.UserCreatedSuccessfully.GetDescription(), ErrorCodes.Created
-                    );
+                    // After successful user creation, assign role (for example, default role 'User')
+                    var role = user.isRole ?? "User"; // Default to 'User' if no role is specified
+                    var roleResult = await _userManager.AddToRoleAsync(newUser, role);
+
+                    if (roleResult.Succeeded)
+                    {
+                        return InterlinkResponse<IdentityResult>.SuccessResponse(
+                            result,
+                            ResponseMessages.UserCreatedSuccessfully.GetDescription(),
+                            ErrorCodes.Created
+                        );
+                    }
+                    else
+                    {
+                        // Handle role assignment failure (optional)
+                        return InterlinkResponse<IdentityResult>.FailResponse(
+                            result,
+                            ResponseMessages.RoleAsignmentFailed.GetDescription(),
+                            ErrorCodes.BadRequest
+                        );
+                    }
                 }
 
                 return InterlinkResponse<IdentityResult>.FailResponse(
@@ -332,13 +435,14 @@ namespace ChatApplication.Repository
             }
             catch (Exception ex)
             {
+                // Log exception here if necessary
                 return InterlinkResponse<IdentityResult>.FailResponse(
-                    
-                   message: ResponseMessages.InternalServerError.GetDescription(),
+                    message: ResponseMessages.InternalServerError.GetDescription(),
                     statusCode: ErrorCodes.InternalServerError
                 );
             }
         }
+
         public async Task<InterlinkResponse<ApplicationUser>> LoginAsync(LoginRequestDto logininfo)
         {
             try

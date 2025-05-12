@@ -61,7 +61,7 @@ namespace ChatApplication.Services
                 var user = userResult.Data;
 
                 // 4. Generate new encrypted token
-                var newToken = _tokenService.GenerateToken(user);
+                var newToken =await _tokenService.GenerateToken(user);
                 if (string.IsNullOrEmpty(newToken))
                 {
                     return InterlinkResponse<string>.FailResponse(
