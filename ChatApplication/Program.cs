@@ -16,6 +16,10 @@ using Microsoft.AspNetCore.Mvc.Versioning;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using ChatApplication.Models.ChatMessageModel;
 using ChatApplication.RolesAuthorization;
+using ChatApplication.Repository.Implementation;
+using ChatApplication.TCPServer;
+using ChatApplication.TCPServver;
+using ChatApplication.MiddleWare;
 //using ChatApplication.MiddleWare;
 
 
@@ -95,6 +99,11 @@ builder.Services.AddScoped<IEmailService, EmailService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IUserServices, UserServices>();
+builder.Services.AddScoped<ITcpChatService, TcpChatService>();
+builder.Services.AddScoped<ITcpChatRepository, TcpChatRepository>();
+builder.Services.AddHostedService<TcpChatServer>();  // Register TcpChatServer as a background service
+//builder.Services.AddHostedService<WebSocketServer>();  // ✅ Add this line
+
 builder.Services.AddScoped<IRefreshTokenService, RefreshTokenService>();
 builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IChatRepository<ChatMessage>, ChatRepository<ChatMessage>>();
@@ -123,6 +132,21 @@ app.UseStaticFiles();
 
 app.UseRouting();
 //app.UseMiddleware<EncryptedTokenMiddleware>(); // 🔐 Must come first
+app.UseWebSockets();
+app.Map("/ws", async context =>
+{
+    if (context.WebSockets.IsWebSocketRequest)
+    {
+        using var socket = await context.WebSockets.AcceptWebSocketAsync();
+        var chatService = context.RequestServices.GetRequiredService<ITcpChatService>();
+        await chatService.HandleConnectionAsync(socket);
+    }
+    else
+    {
+        context.Response.StatusCode = 400;
+    }
+});
+//app.UseMiddleware<WebSocketMiddleware>();
 
 app.UseAuthentication(); // required before UseAuthorization
 

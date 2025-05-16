@@ -9,6 +9,7 @@
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/7.0.5/signalr.min.js"></script>
 <!---------------library for front end jose ------------------------->
 
 
@@ -95,7 +96,7 @@
 
         <div style="display: flex; padding: 15px 20px; border-top: 1px solid #ddd; background: #fff;">
             <input type="text" placeholder="Type your message here..." id="messageInput" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 16px; outline: none;">
-            <button type="button" onclick="sendMessage()" style="padding: 10px 20px; margin-left: 10px; background: #4CAF50; border: none; border-radius: 4px; font-size: 16px; color: white; cursor: pointer; transition: background 0.3s;">Send</button>
+            <button type="button" onclick="sendMessagetcp()" style="padding: 10px 20px; margin-left: 10px; background: #4CAF50; border: none; border-radius: 4px; font-size: 16px; color: white; cursor: pointer; transition: background 0.3s;">Send</button>
         </div>
     </div>
 </div>
@@ -301,7 +302,7 @@
             import {sessionState} from '/js/Sessionvariables.js';
                 import {} from '/js/jwtWorkingFunctions.js';
                        // import {saveProfileChanges} from '/js/UserUpdateData.js';
-
+                         //  import {sendMessagetcp} from '/js/TcpChat.js';
                         import {loadProfileImage} from '/js/LoggedUserData.js';
                             import { loadUsersForAdminPanel,editUser,cancelEdit,saveUser } from '/js/AdminFunctions.js';
             import {confirmLogout,confirmBeforeEdit} from '/js/AlertFunctions.js';
@@ -323,6 +324,7 @@
          base64Key
        
         };
+
                      
         window.openAdminModal = function () {
             const modal = document.getElementById("adminPanelModal");
@@ -361,17 +363,159 @@
                 modal.style.display = "none";
             }
         };
+
+                  //  window.sendMessagetcp=()=>{sendMessagetcp(senderId,selectedReceiverId)};
                     
             //--------------confirm Before Edit Bro-------------
                     window.confirmBeforeEdit = () => confirmBeforeEdit(tokenKey);
                     //-----------------send message to User---------------------
-                    window.sendMessage = () => {                          
-                sendMessage(tokenKey, senderId, selectedReceiverId);
-            };
+            //         window.sendMessage = () => {                          
+            //     sendMessage(tokenKey, senderId, selectedReceiverId);
+            // };
+
                  // window.saveProfileChanges=()=>{
                  //          saveProfileChanges(  tokenKey, jwtDecrypt,AppConfig,startSessionCycle,resetVerification,Swal);
                  // };
-            
+            //-----------------------------websocket------------------------------------
+                            let socket = null;
+        let isSocketConnected = false;
+
+        // Function to append messages to the chat
+                function appendMessageToChat(message, isSender, isRead = false) {
+            const chatMessages = document.getElementById("chatMessages");
+
+            const messageContainer = document.createElement("div");
+            messageContainer.style.display = "flex";
+            messageContainer.style.justifyContent = isSender ? "flex-end" : "flex-start";
+            messageContainer.style.margin = "5px 0";
+
+            const bubble = document.createElement("div");
+            bubble.style.maxWidth = "60%";
+            bubble.style.background = isSender ? "#dcf8c6" : "#fff";
+            bubble.style.padding = "10px 15px";
+            bubble.style.borderRadius = "20px";
+            bubble.style.boxShadow = "0 1px 3px rgba(0,0,0,0.1)";
+            bubble.style.position = "relative";
+            bubble.style.wordBreak = "break-word";
+            bubble.style.fontSize = "15px";
+
+            // Message text
+            const msgText = document.createElement("div");
+            msgText.innerText = message;
+
+            // Timestamp + ticks
+            const footer = document.createElement("div");
+            footer.style.display = "flex";
+            footer.style.justifyContent = "flex-end";
+            footer.style.alignItems = "center";
+            footer.style.marginTop = "5px";
+            footer.style.fontSize = "11px";
+            footer.style.opacity = "0.6";
+
+            const timestamp = document.createElement("span");
+            timestamp.innerText = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            // Ticks (only for sender)
+            let ticks = null;
+            if (isSender) {
+                ticks = document.createElement("span");
+                ticks.style.marginLeft = "6px";
+                ticks.innerHTML = isRead
+                    ? "✔✔" // double tick for read
+                    : "✔";  // single tick for sent
+
+                ticks.style.color = isRead ? "#4fc3f7" : "#999"; // blue for read
+            }
+
+            footer.appendChild(timestamp);
+            if (ticks) footer.appendChild(ticks);
+
+            bubble.appendChild(msgText);
+            bubble.appendChild(footer);
+            messageContainer.appendChild(bubble);
+            chatMessages.appendChild(messageContainer);
+
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+                // Page load
+        window.addEventListener("DOMContentLoaded", () => {
+            connectWebSocket();
+        });
+        // Function to send message
+                // Function to send message
+        function sendMessagetcp() {
+            const input = document.getElementById("messageInput");
+            const messageTxt = input.value.trim();
+            if (!messageTxt) return;
+
+            const message = {
+                senderId, // defined globally
+                selectedReceiverId, // defined globally
+                messageTxt,
+                timestamp: new Date().toISOString()
+            };
+
+            // Show on sender's screen
+            appendMessageToChat(message.messageTxt, true,false);
+            input.value = "";
+
+            // Only send if socket is connected
+            if (isSocketConnected && socket && socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify(message));
+                      
+            } else {
+                console.warn("Socket not connected. Message not sent.");
+            }
+        }
+
+        // Function to establish WebSocket connection
+                // Connect WebSocket
+        function connectWebSocket() {
+            const wsUrl = "wss://localhost:7231/ws";
+            socket = new WebSocket(wsUrl);
+
+            socket.onopen = () => {
+                console.log("✅ WebSocket connected");
+                isSocketConnected = true;
+
+                // Send senderId to identify this user
+                socket.send(senderId);
+            };
+
+            socket.onmessage = (event) => {
+                const data = JSON.parse(event.data);
+                if (data.senderId !== senderId) {
+                    appendMessageToChat(data.messageTxt, false);
+                }
+            };
+
+            socket.onclose = () => {
+                console.warn("🔌 WebSocket disconnected");
+                isSocketConnected = false;
+            };
+
+            socket.onerror = (error) => {
+                console.error("❌ WebSocket error:", error);
+                isSocketConnected = false;
+            };
+        }
+
+        // Expose globally
+        window.sendMessagetcp = sendMessagetcp;
+
+
+
+                   // Display message in a formatted way (additional UI formatting)
+        function displayMessage(senderId, selectedReceiverId, messageTxt, timestamp) {
+            const container = document.getElementById("chatBox");
+            const messageElement = document.createElement("div");
+            messageElement.innerText = `[${timestamp}] ${senderId} to ${selectedReceiverId}: ${messageTxt}`;
+            container.appendChild(messageElement);
+        }
+
+       
+
                     
               //-------------confirm Logout------------------------
                    window.confirmLogout=()=>confirmLogout(tokenKey,resetVerification);
@@ -660,7 +804,7 @@
             }
         }
         window.saveProfileChanges = saveProfileChanges;
-        -----------------------------------Front end sy Profile Picture Edit----------------------------------------------
+      //  -----------------------------------Front end sy Profile Picture Edit----------------------------------------------
         function uploadProfilePicture(event) {
             const token = localStorage.getItem(tokenKey);
             if (!token) {
